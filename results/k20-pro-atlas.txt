@@ -1,0 +1,30 @@
+﻿vane atlas capture
+label      : k20-pro-atlas
+captured   : 2026-08-14 17:18:55 +02:00
+adb model  : Redmi K20 Pro
+platform   : msmnile
+android    : 11
+corpus     : demo/atlas.bin, 25000 GloVe 300d vectors, INT4
+
+atlas_server runs ON THE DEVICE; every search and every timing below is
+computed by its Arm core. The HTTP client is on the host, reaching the
+device through 'adb forward tcp:8080'. Captured verbatim; nothing edited.
+Each A/B line is an independent request; the capture aborts on any failure
+rather than repeating a previous reading.
+==============================================================================
+
+=== caps ===
+{"features":"neon fp16 dotprod","cpu":"Qualcomm Technologies, Inc SM8150","os":"android","sve_vector_bits":null,"path":"neon","available_paths":["scalar","neon"],"words":25000,"dim":320,"int4_bytes":5000000,"fp32_bytes":32000000}
+
+=== semantic quality (dispatched path) ===
+king      -> queen, prince, monarch, kingdom, throne
+computer  -> computers, software, pc, computing, technology
+ocean     -> sea, waters, seas, oceans, atlantic
+arm       -> hand, shoulder, wrist, head, arms
+analogy   -> king, queen, throne, monarch
+
+=== interleaved A/B, median of 15 pairs, same core and cache ===
+scalar=   6,835 us  neon=   2,753 us  speedup=2.48x   min 6,602/2,653
+scalar=   6,975 us  neon=   2,685 us  speedup=2.60x   min 6,597/2,653
+scalar=   6,841 us  neon=   2,778 us  speedup=2.46x   min 6,582/2,656
+scalar=   6,726 us  neon=   2,689 us  speedup=2.50x   min 6,534/2,653

@@ -1,0 +1,40 @@
+{
+  "schema": "vane.report/1",
+  "note": "Every value is measured on the reporting device. Fields the platform could not observe are null, never estimated.",
+  "device": {
+    "cpu": "unknown",
+    "os": "android",
+    "features": "neon fp16 dotprod i8mm bf16",
+    "sve_vector_bits": null
+  },
+  "results": [
+    {
+      "op": "dequant_gemv_int4",
+      "path": "scalar",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 240088,
+      "median_ns": 743854.0000,
+      "p95_ns": 823021.0000,
+      "min_ns": 646458.0000,
+      "gb_per_sec": 1.7729,
+      "thermal_c_start": 41.8000,
+      "thermal_c_end": 70.1000,
+      "sustained_ratio": 0.9791
+    },
+    {
+      "op": "dequant_gemv_int4",
+      "path": "neon",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 531014,
+      "median_ns": 330156.0000,
+      "p95_ns": 362083.0000,
+      "min_ns": 266667.0000,
+      "gb_per_sec": 3.9211,
+      "thermal_c_start": 59.8000,
+      "thermal_c_end": 72.9000,
+      "sustained_ratio": 0.9509
+    }
+  ]
+}

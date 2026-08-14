@@ -1,0 +1,67 @@
+# ---- build output ----
+build/
+build_*/
+cmake-build-*/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.lib
+*.pdb
+*.wasm
+*.apk
+*.aab
+# Exception: the prebuilt plugin shipped with the Unity package
+!unity/Runtime/Plugins/**/*.so
+
+# ---- models and large binaries ----
+*.gguf
+*.onnx
+*.safetensors
+*.pt
+*.unitypackage
+voices-*.bin
+
+# ---- Unity demo project: LOCAL ONLY, never published ----
+# 1.6 GB, and Assets/Art + Terrain + Audio are third-party Asset Store
+# content we have no right to redistribute. Assets/Art/Sand_A_Normal.tif
+# alone is 132 MB, over GitHub's 100 MB hard limit. The publishable Unity
+# surface is the UPM package under unity/.
+UnityIntegration/
+
+# ---- local-only working material ----
+# Pre-cleanup artifacts kept for reference. Contains unverified benchmark
+# output and must never be published.
+_archive/
+# Planning and competition-submission notes: about the process, not the
+# software. Deliberately not part of the public repository.
+IMPROVEMENT.md
+SUBMISSION.md
+DEVPOST.md
+# Source drop used to hand the tree to a machine that could not clone it.
+# Build products belong in a release, not in the history.
+vane.tar.gz
+
+# ---- editor / agent tooling (machine-local, not part of the product) ----
+.agents/
+.claude/
+.cursor/
+.mcp.json
+.cbmignore
+.codebase-memory/
+.vscode/
+.idea/
+
+# ---- python ----
+__pycache__/
+.venv/
+venv/
+*.egg-info/
+
+# ---- node ----
+node_modules/
+
+# ---- os ----
+.DS_Store
+Thumbs.db

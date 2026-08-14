@@ -1,0 +1,40 @@
+{
+  "schema": "vane.report/1",
+  "note": "Every value is measured on the reporting device. Fields the platform could not observe are null, never estimated.",
+  "device": {
+    "cpu": "Qualcomm Technologies, Inc KONA",
+    "os": "android",
+    "features": "neon fp16 dotprod",
+    "sve_vector_bits": null
+  },
+  "results": [
+    {
+      "op": "dequant_gemv_int4",
+      "path": "scalar",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 115927,
+      "median_ns": 1566458.0000,
+      "p95_ns": 1608177.0000,
+      "min_ns": 1328906.0000,
+      "gb_per_sec": 0.8560,
+      "thermal_c_start": null,
+      "thermal_c_end": null,
+      "sustained_ratio": 0.9786
+    },
+    {
+      "op": "dequant_gemv_int4",
+      "path": "neon",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 264455,
+      "median_ns": 681875.0000,
+      "p95_ns": 693958.0000,
+      "min_ns": 580000.0000,
+      "gb_per_sec": 1.9528,
+      "thermal_c_start": null,
+      "thermal_c_end": null,
+      "sustained_ratio": 1.0076
+    }
+  ]
+}

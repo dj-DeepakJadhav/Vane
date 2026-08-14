@@ -1,0 +1,23 @@
+vane atlas capture
+label      : graviton4-atlas
+captured   : 2026-08-14T11:03:17+00:00
+uname      : Linux 7.0.0-1006-aws aarch64
+lscpu model: Neoverse-V2
+ec2 type   : c8g.large
+corpus     : demo/atlas.bin, 25000 GloVe 300d vectors, INT4
+
+Captured verbatim from the machine. Nothing edited.
+==============================================================================
+
+=== caps ===
+{"features":"neon fp16 dotprod i8mm bf16 sve sve2","cpu":"not exposed","os":"linux","sve_vector_bits":128,"path":"sve","available_paths":["scalar","neon","sve"],"words":25000,"dim":320,"int4_bytes":5000000,"fp32_bytes":32000000}
+=== semantic quality (dispatched path) ===
+king       -> queen, prince, monarch, kingdom, throne
+computer   -> computers, software, pc, computing, technology
+ocean      -> sea, waters, seas, oceans, atlantic
+analogy    -> king, queen, throne, monarch
+=== per-path search timing (median of 15) ===
+scalar   median=    3011 us  min=    3006 us  path=scalar
+neon     median=    1455 us  min=    1444 us  path=neon
+sve      median=    1536 us  min=    1509 us  path=sve
+DONE

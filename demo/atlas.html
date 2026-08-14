@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atlas — semantic search on Arm</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#11151c; --panel-b:#232a36; --text:#e7ecf3; --dim:#8b96a8;
+    --accent:#3ddc97; --accent2:#5cc2ff; --warn:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+    font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+  #cv{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+
+  .panel{position:fixed;background:rgba(17,21,28,.92);backdrop-filter:blur(8px);
+    border:1px solid var(--panel-b);border-radius:10px;padding:14px 16px}
+
+  #hud{top:14px;left:14px;min-width:260px}
+  #hud h1{margin:0 0 8px;font-size:15px;letter-spacing:.02em}
+  #hud h1 span{color:var(--accent)}
+  .row{display:flex;justify-content:space-between;gap:14px;margin:3px 0;color:var(--dim)}
+  .row b{color:var(--text);font-weight:600}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+  #paths{display:flex;gap:6px;margin-top:10px}
+  #paths button{flex:1;padding:6px 4px;border-radius:6px;border:1px solid var(--panel-b);
+    background:#161c26;color:var(--dim);font:inherit;cursor:pointer}
+  #paths button.active{border-color:var(--accent);color:var(--accent);background:#0f2a20}
+  #paths button:disabled{opacity:.35;cursor:not-allowed}
+
+  #search{bottom:14px;left:14px;right:14px;max-width:640px;margin:0 auto;
+    display:flex;gap:8px;align-items:center}
+  #search input{flex:1;background:#0d1117;border:1px solid var(--panel-b);border-radius:8px;
+    color:var(--text);padding:10px 12px;font:15px/1.2 inherit}
+  #search input:focus{outline:none;border-color:var(--accent2)}
+  #search button{background:var(--accent);border:none;border-radius:8px;color:#04140c;
+    font-weight:700;padding:10px 16px;cursor:pointer}
+  #search .hint{position:absolute;bottom:100%;left:0;margin-bottom:6px;color:var(--dim);font-size:12px}
+
+  #timing{top:14px;right:14px;text-align:right;min-width:230px}
+  #timing .big{font-size:22px;font-weight:700;color:var(--accent2)}
+
+  #ab{width:100%;margin-top:8px;padding:7px;border-radius:6px;
+    border:1px solid var(--accent2);background:#0d2233;color:var(--accent2);
+    font:inherit;font-weight:600;cursor:pointer}
+  #ab:disabled{opacity:.5;cursor:wait}
+  #abresult{margin-top:10px;border-top:1px solid var(--panel-b);padding-top:8px;display:none}
+  #abresult .ratio{font-size:20px;font-weight:700;color:var(--accent)}
+  #abresult .note{color:var(--dim);font-size:11px;margin-top:4px;text-align:right;line-height:1.35}
+
+  #err{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+    background:#2a1414;border:1px solid var(--warn);color:#ffb3b3;padding:8px 14px;
+    border-radius:8px;display:none}
+
+  a{color:var(--accent2)}
+
+  /* ------------------------------------------------------- narrow screens
+     A phone is the target hardware for this library, so the demo has to be
+     usable on one. At 1080 physical px and 2.75x density the viewport is only
+     ~393 CSS px wide, while #hud (260) and #timing (230) together demand 490 —
+     so the two fixed panels overlapped and buried the readouts, and #search
+     ended up below the visible area. Verified on a Redmi K20 Pro.
+
+     Below 760px the panels stop being corner-anchored and stack into a single
+     scrollable column, with the search bar pinned above the canvas. */
+  @media (max-width: 760px){
+    html,body{overflow:hidden}
+
+    #stack{position:fixed;top:8px;left:8px;right:8px;z-index:3;
+      display:flex;flex-direction:column;gap:8px;
+      max-height:calc(100% - 130px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+    /* Panels become flow children of #stack rather than fixed corners. */
+    .panel{position:static;min-width:0;width:100%;padding:11px 13px}
+    #hud, #timing{top:auto;left:auto;right:auto;min-width:0;text-align:left}
+    #timing{text-align:left}
+    #timing .big{font-size:26px}
+    #abresult .note{text-align:left}
+
+    /* The point cloud is the backdrop; keep it behind everything. */
+    #cv{z-index:0}
+
+    #search{position:fixed;bottom:10px;left:8px;right:8px;z-index:4;
+      background:rgba(17,21,28,.94);backdrop-filter:blur(8px);
+      border:1px solid var(--panel-b);border-radius:10px;padding:9px 10px;
+      flex-wrap:wrap}
+    #search input{min-width:0;font-size:16px}   /* 16px stops iOS zoom-on-focus */
+    #search .hint{position:static;order:-1;flex-basis:100%;margin:0 0 6px}
+    #err{bottom:96px}
+  }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<!-- #stack only does anything under the narrow-screen media query, where the
+     panels stop being fixed to opposite corners and become a single stacked
+     column. On a wide screen both panels are position:fixed, so this wrapper
+     has no effect on their placement. -->
+<div id="stack">
+<div class="panel" id="hud">
+  <h1>ATLAS <span>/ vane</span></h1>
+  <div class="row"><span>device</span><b class="mono" id="f-cpu">—</b></div>
+  <div class="row"><span>features</span><b class="mono" id="f-feat">—</b></div>
+  <div class="row"><span>corpus</span><b class="mono" id="f-corpus">—</b></div>
+  <div class="row"><span>footprint</span><b class="mono" id="f-size">—</b></div>
+  <div id="paths">
+    <button data-path="scalar">scalar</button>
+    <button data-path="neon">neon</button>
+    <button data-path="sve">sve</button>
+  </div>
+  <button id="ab">run A/B on this device</button>
+</div>
+
+<div class="panel" id="timing">
+  <div class="row"><span>kernel time</span></div>
+  <div class="big mono" id="f-time">— µs</div>
+  <div class="row"><span>path executed</span><b class="mono" id="f-path2">—</b></div>
+  <div id="abresult"></div>
+</div>
+</div><!-- /#stack -->
+
+<div id="err"></div>
+
+<div id="search">
+  <div class="hint">a word — or an analogy: <b>king - man + woman</b></div>
+  <input id="q" placeholder="king    ·    or:  king - man + woman" autocomplete="off" spellcheck="false">
+  <button id="go">search</button>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const cv=$('#cv'), ctx=cv.getContext('2d');
+let W,H,DPR;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=cv.width=innerWidth*DPR; H=cv.height=innerHeight*DPR;
+  cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
+}
+addEventListener('resize',resize); resize();
+
+// camera: pan/zoom over the [-1,1] point field
+let camX=0,camY=0,zoom=1;
+function toScreen(x,y){
+  return [W/2 + (x-camX)*zoom*(W*0.42), H/2 - (y-camY)*zoom*(H*0.42)];
+}
+
+let coords=null;      // Float32Array, 2 per word
+let highlight=[];      // [{x,y,word,score}]
+let queryLabel='';
+let kernelUs=null;
+
+async function loadCoords(){
+  const r=await fetch('/api/coords');
+  const buf=await r.arrayBuffer();
+  coords=new Float32Array(buf);
+}
+
+function draw(){
+  ctx.fillStyle='#0a0d12';
+  ctx.fillRect(0,0,W,H);
+
+  if(coords){
+    ctx.fillStyle='rgba(140,155,180,0.35)';
+    const n=coords.length/2;
+    // Sparse point cloud: draw every point but keep them tiny — 25k points
+    // at 1.4px each is a legible galaxy, not a smear.
+    const r=1.3*DPR;
+    for(let i=0;i<n;i++){
+      const [sx,sy]=toScreen(coords[2*i],coords[2*i+1]);
+      if(sx<-4||sy<-4||sx>W+4||sy>H+4) continue;
+      ctx.beginPath(); ctx.arc(sx,sy,r,0,6.283); ctx.fill();
+    }
+  }
+
+  if(highlight.length){
+    ctx.font=`${12*DPR}px ui-monospace, monospace`;
+    highlight.forEach((h,i)=>{
+      const [sx,sy]=toScreen(h.x,h.y);
+      const isTop = i===0;
+      ctx.beginPath();
+      ctx.fillStyle = isTop ? '#3ddc97' : `rgba(92,194,255,${0.9-i*0.03})`;
+      ctx.arc(sx,sy, (isTop?5:3)*DPR, 0, 6.283); ctx.fill();
+      if(i<12){
+        ctx.fillStyle = isTop ? '#3ddc97' : '#cfe3f7';
+        ctx.fillText(h.word, sx+8*DPR, sy+4*DPR);
+      }
+    });
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+// pan / zoom
+let dragging=false, lastX=0, lastY=0;
+cv.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;});
+addEventListener('pointerup',()=>dragging=false);
+addEventListener('pointermove',e=>{
+  if(!dragging) return;
+  camX -= (e.clientX-lastX)/(zoom*W*0.42*(1/DPR));
+  camY += (e.clientY-lastY)/(zoom*H*0.42*(1/DPR));
+  lastX=e.clientX; lastY=e.clientY;
+});
+cv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  zoom=Math.min(20,Math.max(0.3, zoom*(e.deltaY<0?1.1:0.9)));
+},{passive:false});
+
+function showErr(msg){
+  const el=$('#err'); el.textContent=msg; el.style.display='block';
+  clearTimeout(showErr._t); showErr._t=setTimeout(()=>el.style.display='none',2500);
+}
+
+async function refreshCaps(){
+  const r=await fetch('/api/caps'); const c=await r.json();
+  $('#f-cpu').textContent = c.cpu && c.cpu!=='not exposed' ? c.cpu : c.os;
+  $('#f-feat').textContent = c.features;
+  $('#f-corpus').textContent = `${c.words.toLocaleString()} × ${c.dim}`;
+  const mb=b=>(b/1e6).toFixed(1);
+  $('#f-size').textContent = `${mb(c.int4_bytes)} MB int4 (was ${mb(c.fp32_bytes)} MB)`;
+  document.querySelectorAll('#paths button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.path===c.path);
+  });
+  $('#f-path2').textContent=c.path;
+  return c;
+}
+
+// "king - man + woman" becomes the analogy endpoint; anything else is a
+// plain lookup. Both are the same single kernel call server-side.
+function buildUrl(text){
+  const active=document.querySelector('#paths button.active');
+  const pathQ = active ? `&path=${active.dataset.path}` : '';
+  const m = text.match(/^\s*(\S+)\s*-\s*(\S+)\s*\+\s*(\S+)\s*$/);
+  if(m){
+    const [,a,b,c]=m;
+    return `/api/analogy?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`
+         + `&c=${encodeURIComponent(c)}&k=40${pathQ}`;
+  }
+  return `/api/search?q=${encodeURIComponent(text.trim())}&k=40${pathQ}`;
+}
+
+let lastInput='';
+
+async function runSearch(text){
+  const j = await (await fetch(buildUrl(text))).json();
+  if(j.error){ showErr(`not in the vocabulary: "${j.query||text}"`); return; }
+  lastInput = text;
+  queryLabel = j.query;
+  highlight = j.results.map(x=>({word:x.word,score:x.score,x:x.x,y:x.y}));
+  $('#f-time').textContent = `${j.kernel_us.toFixed(0)} µs`;
+  $('#f-path2').textContent = j.path;
+  if(highlight.length){ camX=highlight[0].x; camY=highlight[0].y; zoom=Math.max(zoom,3); }
+}
+
+$('#go').addEventListener('click', ()=>{
+  const w=$('#q').value.trim().toLowerCase();
+  if(w) runSearch(w).catch(e=>showErr(String(e)));
+});
+$('#q').addEventListener('keydown', e=>{ if(e.key==='Enter') $('#go').click(); });
+
+document.querySelectorAll('#paths button').forEach(b=>{
+  b.addEventListener('click', async ()=>{
+    if(b.disabled) return;
+    document.querySelectorAll('#paths button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    // Re-run the identical query on the newly selected kernel. This is the
+    // A/B: same input, same device, different instructions, and the timing
+    // below comes from the same clock vane_bench uses.
+    if(lastInput) await runSearch(lastInput);
+  });
+});
+
+// Interleaved A/B. Both kernels are timed alternately inside ONE request so
+// they share a core, a thermal state and a cache. Timing them in separate
+// requests lets the scheduler decide the winner instead of the code.
+$('#ab').addEventListener('click', async ()=>{
+  const w = (lastInput || $('#q').value || 'computer').trim().toLowerCase();
+  const m = w.match(/^\s*(\S+)\s*-\s*\S+\s*\+\s*\S+\s*$/);
+  const word = m ? m[1] : w;
+  const btn=$('#ab');
+  btn.disabled=true; btn.textContent='measuring…';
+  try{
+    const j = await (await fetch(`/api/compare?q=${encodeURIComponent(word)}&reps=15`)).json();
+    if(j.error){ showErr(`not in vocabulary: "${word}"`); return; }
+    const el=$('#abresult');
+    el.style.display='block';
+    el.innerHTML =
+      `<div class="row"><span>scalar</span><b class="mono">${j.scalar_us.toFixed(0)} µs</b></div>`+
+      `<div class="row"><span>neon</span><b class="mono">${j.neon_us.toFixed(0)} µs</b></div>`+
+      `<div class="ratio mono">${j.speedup ? j.speedup.toFixed(2)+'×' : '—'}</div>`+
+      `<div class="note">median of ${j.reps} interleaved pairs on this device,<br>`+
+      `same core and cache for both</div>`;
+  }catch(e){ showErr(String(e)); }
+  finally{ btn.disabled=false; btn.textContent='run A/B on this device'; }
+});
+
+(async function init(){
+  try{
+    await loadCoords();
+    const c = await refreshCaps();
+    if(!document.querySelector('#paths button.active')){
+      const def=document.querySelector(`#paths button[data-path="${c.path}"]`);
+      if(def) def.classList.add('active');
+    }
+    // Disable paths this CPU cannot execute. The server probes each one with
+    // vn_force_path rather than guessing from feature bits, so a button is
+    // enabled only if that kernel will genuinely run here — no button that
+    // quietly falls back to something else and reports it as a success.
+    const avail = new Set(c.available_paths || []);
+    document.querySelectorAll('#paths button').forEach(b=>{
+      if(!avail.has(b.dataset.path)){
+        b.disabled = true;
+        b.title = `${b.dataset.path} is not available on this CPU`;
+      }
+    });
+  }catch(e){ showErr('failed to load atlas.bin — is atlas_server running?'); }
+})();
+</script>
+</body>
+</html>

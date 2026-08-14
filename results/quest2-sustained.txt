@@ -1,0 +1,70 @@
+﻿vane device run
+label      : quest2-sustained
+captured   : 2026-08-14 15:18:40 +02:00
+ndk        : 27.0.12077973
+abi        : arm64-v8a
+adb model  : Quest 2
+adb device : hollywood
+android    : 14
+soc        : SM8250
+args       : --seconds 180 --rows 512 --cols 4096 --op dequant_gemv_int4
+
+This file is captured verbatim from the device. Nothing in it is edited.
+==============================================================================
+
+--- vane_probe ---
+vane probe
+  cpu             : Qualcomm Technologies, Inc KONA
+  os              : android
+  features        : neon fp16 dotprod
+  sve vector len  : n/a
+  dispatched to   : neon
+
+  available paths : scalar neon
+
+--- vane_verify ---
+vane_verify — every path vs the scalar oracle
+  cpu      : Qualcomm Technologies, Inc KONA
+  features : neon fp16 dotprod
+  rel tol  : 1.0e-04
+
+dequant_gemv_int4
+  neon       8 x 32     max_abs=2.980e-07  max_rel=2.980e-07  PASS
+  sve        8 x 32     SKIP (not available on this CPU)
+  neon       4 x 96     max_abs=4.768e-07  max_rel=2.358e-07  PASS
+  sve        4 x 96     SKIP (not available on this CPU)
+  neon      64 x 512    max_abs=3.815e-06  max_rel=2.190e-06  PASS
+  sve       64 x 512    SKIP (not available on this CPU)
+  neon     128 x 4096   max_abs=2.670e-05  max_rel=1.332e-05  PASS
+  sve      128 x 4096   SKIP (not available on this CPU)
+
+quantize_int4
+  neon   quantize n=32      byte_mismatches=0  scale_err=0.000e+00  PASS
+  neon   quantize n=4096    byte_mismatches=0  scale_err=0.000e+00  PASS
+  neon   quantize n=65536   byte_mismatches=0  scale_err=0.000e+00  PASS
+
+gemv_int8
+  neon   gemv_int8 16 x 64     mismatches=0  PASS
+  neon   gemv_int8 64 x 4096   mismatches=0  PASS
+
+RESULT: PASS — all available paths agree with the oracle
+verify exit code: 0
+
+--- vane_bench ---
+vane_bench
+  cpu      : Qualcomm Technologies, Inc KONA
+  os       : android
+  features : neon fp16 dotprod
+  window   : 180.0 s per path
+  thermal  : no readable sensor on this platform (reported as null)
+
+dequant_gemv_int4  (512 x 4096)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar      1566458    1608177      0.86    115927     1.00x      0.98        -
+  neon         681875     693958      1.95    264455     2.30x      1.01        -
+  sve      unavailable on this CPU
+
+  auto-dispatch selects: neon
+  sustained = (median of first 20% of run) / (median of last 20%); below 1.00 means throughput fell during the run
+  report written: /data/local/tmp/vane/report.json

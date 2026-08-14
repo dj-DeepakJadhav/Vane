@@ -1,0 +1,96 @@
+{
+  "schema": "vane.report/1",
+  "note": "Every value is measured on the reporting device. Fields the platform could not observe are null, never estimated.",
+  "device": {
+    "cpu": "Qualcomm Technologies, Inc KONA",
+    "os": "android",
+    "features": "neon fp16 dotprod",
+    "sve_vector_bits": null
+  },
+  "results": [
+    {
+      "op": "dequant_gemv_int4",
+      "path": "scalar",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 3260,
+      "median_ns": 1566927.0000,
+      "p95_ns": 1623646.0000,
+      "min_ns": 1330885.0000,
+      "gb_per_sec": 0.8664,
+      "thermal_c_start": null,
+      "thermal_c_end": null,
+      "sustained_ratio": 0.9750
+    },
+    {
+      "op": "dequant_gemv_int4",
+      "path": "neon",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 7422,
+      "median_ns": 681928.0000,
+      "p95_ns": 705104.0000,
+      "min_ns": 580156.0000,
+      "gb_per_sec": 1.9729,
+      "thermal_c_start": null,
+      "thermal_c_end": null,
+      "sustained_ratio": 1.0089
+    },
+    {
+      "op": "gemv_int8",
+      "path": "scalar",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 20478,
+      "median_ns": 245521.0000,
+      "p95_ns": 255990.0000,
+      "min_ns": 208906.0000,
+      "gb_per_sec": 8.6141,
+      "thermal_c_start": null,
+      "thermal_c_end": null,
+      "sustained_ratio": 0.9999
+    },
+    {
+      "op": "gemv_int8",
+      "path": "neon",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 47062,
+      "median_ns": 104531.0000,
+      "p95_ns": 114947.0000,
+      "min_ns": 88229.0000,
+      "gb_per_sec": 19.7970,
+      "thermal_c_start": null,
+      "thermal_c_end": null,
+      "sustained_ratio": 1.0114
+    },
+    {
+      "op": "quantize_int4",
+      "path": "scalar",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 726,
+      "median_ns": 6931042.0000,
+      "p95_ns": 8083907.0000,
+      "min_ns": 5887814.0000,
+      "gb_per_sec": 1.3696,
+      "thermal_c_start": null,
+      "thermal_c_end": null,
+      "sustained_ratio": 1.0216
+    },
+    {
+      "op": "quantize_int4",
+      "path": "neon",
+      "rows": 512,
+      "cols": 4096,
+      "iterations": 2583,
+      "median_ns": 1980833.0000,
+      "p95_ns": 2037917.0000,
+      "min_ns": 1684011.0000,
+      "gb_per_sec": 4.8748,
+      "thermal_c_start": null,
+      "thermal_c_end": null,
+      "sustained_ratio": 0.9961
+    }
+  ]
+}

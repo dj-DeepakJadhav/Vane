@@ -1,0 +1,94 @@
+﻿vane shape sweep
+label      : s23-ultra-shapes
+captured   : 2026-08-14 00:05:24 +02:00
+adb model  : SM-S918B
+soc        : SM8550
+binaries   : identical to those used for results/s23-ultra.txt (verify exit 0)
+note       : captured verbatim from the device; nothing edited
+==============================================================================
+
+### rows=512 cols=512
+vane_bench
+  cpu      : (not exposed)
+  os       : android
+  features : neon fp16 dotprod i8mm bf16
+  window   : 4.0 s per path
+
+dequant_gemv_int4  (512 x 512)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar        85208     102604      1.90     45355     1.00x      1.02     68.9
+  neon          40104      51198      4.09     97392     2.12x      1.09     65.0
+  sve      unavailable on this CPU
+
+  auto-dispatch selects: neon
+  sustained = (median of first 20% of run) / (median of last 20%); below 1.00 means throughput fell during the run
+
+### rows=512 cols=1024
+vane_bench
+  cpu      : (not exposed)
+  os       : android
+  features : neon fp16 dotprod i8mm bf16
+  window   : 4.0 s per path
+
+dequant_gemv_int4  (512 x 1024)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar       183593     203073      1.82     21806     1.00x      1.06     69.3
+  neon          79427      87864      4.11     49301     2.31x      1.06     68.5
+  sve      unavailable on this CPU
+
+  auto-dispatch selects: neon
+  sustained = (median of first 20% of run) / (median of last 20%); below 1.00 means throughput fell during the run
+
+### rows=512 cols=4096
+vane_bench
+  cpu      : (not exposed)
+  os       : android
+  features : neon fp16 dotprod i8mm bf16
+  window   : 4.0 s per path
+
+dequant_gemv_int4  (512 x 4096)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar       735208     778125      1.82      5466     1.00x      0.99     71.3
+  neon         316354     335521      4.12     12408     2.32x      1.01     69.3
+  sve      unavailable on this CPU
+
+  auto-dispatch selects: neon
+  sustained = (median of first 20% of run) / (median of last 20%); below 1.00 means throughput fell during the run
+
+### rows=256 cols=16384
+vane_bench
+  cpu      : (not exposed)
+  os       : android
+  features : neon fp16 dotprod i8mm bf16
+  window   : 4.0 s per path
+
+dequant_gemv_int4  (256 x 16384)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar      1469063    1565052      1.82      2703     1.00x      0.99     72.1
+  neon         658020     680417      4.09      6085     2.23x      1.01     67.7
+  sve      unavailable on this CPU
+
+  auto-dispatch selects: neon
+  sustained = (median of first 20% of run) / (median of last 20%); below 1.00 means throughput fell during the run
+
+### rows=2048 cols=1024
+vane_bench
+  cpu      : (not exposed)
+  os       : android
+  features : neon fp16 dotprod i8mm bf16
+  window   : 4.0 s per path
+
+dequant_gemv_int4  (2048 x 1024)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar       734479     783541      1.79      5419     1.00x      1.02     72.5
+  neon         329323     338177      4.04     12218     2.23x      1.01     69.7
+  sve      unavailable on this CPU
+
+  auto-dispatch selects: neon
+  sustained = (median of first 20% of run) / (median of last 20%); below 1.00 means throughput fell during the run
+

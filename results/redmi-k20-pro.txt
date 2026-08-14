@@ -1,0 +1,83 @@
+﻿vane device run
+label      : redmi-k20-pro
+captured   : 2026-08-14 13:16:56 +02:00
+ndk        : 27.0.12077973
+abi        : arm64-v8a
+adb model  : Redmi K20 Pro
+adb device : raphaelin
+android    : 11
+soc        : 
+args       : --seconds 5 --rows 512 --cols 4096
+
+This file is captured verbatim from the device. Nothing in it is edited.
+==============================================================================
+
+--- vane_probe ---
+vane probe
+  cpu             : Qualcomm Technologies, Inc SM8150
+  os              : android
+  features        : neon fp16 dotprod
+  sve vector len  : n/a
+  dispatched to   : neon
+
+  available paths : scalar neon
+
+--- vane_verify ---
+vane_verify — every path vs the scalar oracle
+  cpu      : Qualcomm Technologies, Inc SM8150
+  features : neon fp16 dotprod
+  rel tol  : 1.0e-04
+
+dequant_gemv_int4
+  neon       8 x 32     max_abs=2.980e-07  max_rel=2.980e-07  PASS
+  sve        8 x 32     SKIP (not available on this CPU)
+  neon       4 x 96     max_abs=4.768e-07  max_rel=2.358e-07  PASS
+  sve        4 x 96     SKIP (not available on this CPU)
+  neon      64 x 512    max_abs=3.815e-06  max_rel=2.190e-06  PASS
+  sve       64 x 512    SKIP (not available on this CPU)
+  neon     128 x 4096   max_abs=2.670e-05  max_rel=1.332e-05  PASS
+  sve      128 x 4096   SKIP (not available on this CPU)
+
+quantize_int4
+  neon   quantize n=32      byte_mismatches=0  scale_err=0.000e+00  PASS
+  neon   quantize n=4096    byte_mismatches=0  scale_err=0.000e+00  PASS
+  neon   quantize n=65536   byte_mismatches=0  scale_err=0.000e+00  PASS
+
+gemv_int8
+  neon   gemv_int8 16 x 64     mismatches=0  PASS
+  neon   gemv_int8 64 x 4096   mismatches=0  PASS
+
+RESULT: PASS — all available paths agree with the oracle
+verify exit code: 0
+
+--- vane_bench ---
+vane_bench
+  cpu      : Qualcomm Technologies, Inc SM8150
+  os       : android
+  features : neon fp16 dotprod
+  window   : 5.0 s per path
+
+dequant_gemv_int4  (512 x 4096)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar      1396771    1438594      0.94      3548     1.00x      1.02    100.8
+  neon         587500     606615      2.25      8465     2.38x      1.00    100.6
+  sve      unavailable on this CPU
+
+gemv_int8  (512 x 4096)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar       229792     249583      8.96     21291     1.00x      1.01    100.4
+  neon         115573     119479     18.22     43321     1.99x      1.01    100.2
+  sve      unavailable on this CPU
+
+quantize_int4  (512 x 4096)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar      6001562    6047188      1.57       834     1.00x      1.00    100.5
+  neon        1846667    1905365      5.09      2699     3.25x      1.00    100.4
+  sve      unavailable on this CPU
+
+  auto-dispatch selects: neon
+  sustained = (median of first 20% of run) / (median of last 20%); below 1.00 means throughput fell during the run
+  report written: /data/local/tmp/vane/report.json

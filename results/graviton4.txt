@@ -1,0 +1,88 @@
+vane device run
+label      : graviton4
+captured   : 2026-08-14T10:51:37+00:00
+uname      : Linux 7.0.0-1006-aws aarch64
+compiler   : c++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+cpu impl   : 0x41
+cores      : 2
+lscpu model: Neoverse-V2
+lscpu flags: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svepmull svebitperm svesha3 flagm2 frint svei8mm svebf16 i8mm bf16 dgh rng bti
+ec2 type   : c8g.large
+ec2 region : eu-central-1
+args       : --seconds 20 
+
+This file is captured verbatim from the machine. Nothing in it is edited.
+==============================================================================
+
+--- vane_probe ---
+vane probe
+  cpu             : (not exposed)
+  os              : linux
+  features        : neon fp16 dotprod i8mm bf16 sve sve2
+  sve vector len  : 128 bits
+  dispatched to   : sve
+
+  available paths : scalar neon sve
+
+--- vane_verify ---
+vane_verify — every path vs the scalar oracle
+  cpu      : (not exposed)
+  features : neon fp16 dotprod i8mm bf16 sve sve2
+  sve vl   : 128 bits
+  rel tol  : 1.0e-04
+
+dequant_gemv_int4
+  neon       8 x 32     max_abs=2.980e-07  max_rel=2.980e-07  PASS
+  sve        8 x 32     max_abs=4.768e-07  max_rel=2.413e-07  PASS
+  neon       4 x 96     max_abs=4.768e-07  max_rel=2.358e-07  PASS
+  sve        4 x 96     max_abs=4.768e-07  max_rel=3.576e-07  PASS
+  neon      64 x 512    max_abs=3.815e-06  max_rel=2.190e-06  PASS
+  sve       64 x 512    max_abs=3.815e-06  max_rel=2.265e-06  PASS
+  neon     128 x 4096   max_abs=2.670e-05  max_rel=1.332e-05  PASS
+  sve      128 x 4096   max_abs=2.861e-05  max_rel=1.392e-05  PASS
+
+quantize_int4
+  neon   quantize n=32      byte_mismatches=0  scale_err=0.000e+00  PASS
+  neon   quantize n=4096    byte_mismatches=0  scale_err=0.000e+00  PASS
+  neon   quantize n=65536   byte_mismatches=0  scale_err=0.000e+00  PASS
+
+gemv_int8
+  neon   gemv_int8 16 x 64     mismatches=0  PASS
+  neon   gemv_int8 64 x 4096   mismatches=0  PASS
+
+RESULT: PASS — all available paths agree with the oracle
+verify exit code: 0
+
+--- vane_bench ---
+vane_bench
+  cpu      : (not exposed)
+  os       : linux
+  features : neon fp16 dotprod i8mm bf16 sve sve2
+  sve vl   : 128 bits
+  window   : 20.0 s per path
+  thermal  : no readable sensor on this platform (reported as null)
+
+dequant_gemv_int4  (512 x 4096)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar       784542     788081      1.69     25483     1.00x      1.00        -
+  neon         368077     373339      3.61     54273     2.13x      1.00        -
+  sve          376765     393115      3.50     52677     2.08x      1.00        -
+
+gemv_int8  (512 x 4096)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar       363820     367513      5.76     54784     1.00x      1.00        -
+  neon          52230      79773     36.11    343368     6.97x      1.00        -
+  sve           51862      79018     36.38    345902     7.02x      1.00        -
+
+quantize_int4  (512 x 4096)
+  path      median_ns     p95_ns      GB/s     iters vs scalar sustained   temp_C
+  ----------------------------------------------------------------------------------------
+  scalar      7125481    7137073      1.32      2807     1.00x      1.00        -
+  neon        1700340    1711257      5.55     11755     4.19x      1.00        -
+  sve         1685292    1691026      5.60     11864     4.23x      1.00        -
+
+  auto-dispatch selects: sve
+  sustained = (median of first 20% of run) / (median of last 20%); below 1.00 means throughput fell during the run
+  report written: results/graviton4.json
