@@ -6,9 +6,15 @@
 
 Runtime ISA dispatch and honest telemetry for Arm — in about 1,400 lines of C++.
 
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Arm](https://img.shields.io/badge/target-AArch64-0091BD.svg)](#)
-[![Paths](https://img.shields.io/badge/paths-scalar%20%7C%20NEON%20%7C%20SVE-success.svg)](#)
+[![Watch Walkthrough](https://img.youtube.com/vi/VNoRM0nmr0o/mqdefault.jpg)](https://youtu.be/VNoRM0nmr0o)
+
+<p align="center">
+  <a href="https://youtu.be/VNoRM0nmr0o"><b>Watch Walkthrough Video</b></a>
+</p>
+
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg?style=flat-square)](LICENSE)
+[![Arm](https://img.shields.io/badge/target-AArch64-0091BD.svg?style=flat-square)](#)
+[![Paths](https://img.shields.io/badge/paths-scalar%20%7C%20NEON%20%7C%20SVE-success.svg?style=flat-square)](#)
 
 </div>
 
@@ -84,7 +90,7 @@ they agree.
 **Telemetry that cannot lie.** Every number `vn_bench` reports comes from a
 live monotonic clock or a sensor read on the device. Anything the platform does
 not expose is `VN_UNMEASURED` and serialises to JSON `null`. There is no code
-path in this library that emits an estimated, modelled or defaulted metric.
+path in this library that emits estimated or modelled metrics.
 
 ![How Vane binds itself: detection at init, per-translation-unit -march, verify and telemetry](media/5-architecture.png)
 
@@ -253,9 +259,8 @@ dispatch decision, and still differ by 16% on `dequant_gemv_int4`.
 
 **`temp_C` is the hottest *readable* thermal zone, not CPU temperature.** On the
 K20 Pro that zone is a PMIC thermistor reading ~101 °C while the CPU zones read
-~36 °C. Use the `sustained` column to reason about throttling; it is derived
-from measured throughput rather than from a sensor whose identity varies by
-vendor.
+~36 °C. Use the `sustained` column to evaluate throttling; it is calculated
+from measured throughput. Sensor identities vary by vendor.
 
 **Full device-by-device analysis, sustained runs, the shape sweep and the
 thermal-sensor breakdown: [`results/ANALYSIS.md`](results/ANALYSIS.md).**
